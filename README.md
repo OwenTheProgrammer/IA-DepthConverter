@@ -49,5 +49,10 @@ These are the example videos. to save on GitHub storage, I have moved these vide
 6. if you export to "WAV Signed 16-24 bit" then AudioManager.BitsPerSample should be 16-24 and IsSigned should be true
 7. The Assertions will tell you is wrong and how wrong
 ---
-# Usage Rights
-Feel free to do whatever you want with the code I made it only for the youtube video but you might have another use for it, It's public for a reason :)
+# Update notes:
+* 2021-03-17:
+  - I have moved the example videos to youtube to save on github repo space:
+  - Bit Depth Example: https://youtu.be/MA2SIkZfr7k
+  - Total Step Count Example: https://youtu.be/T0QXu6qF100
+  - AudioMod/bin/Debug/* has been deleted
+  - if you want to rebuild the project, you can build it yourself with visual studio
