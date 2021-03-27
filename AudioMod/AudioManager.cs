@@ -127,12 +127,13 @@ namespace AudioMod
             }
             byte[] LeftChannel = new byte[Samples / Channels];
             byte[] RightChannel = new byte[Samples / Channels];
-            for (int i = headerLength, l = 0, r = 0; i < AudioByteStream.Length; i++)
+            for (int i = headerLength; i < (AudioByteStream.Length * 2); i++)
             {
-                if (~i & 1) // i % 2 == 0
-                { LeftChannel[l] = AudioByteStream[i]; l++; }
+                int hOff = (i - headerLength);
+                if ((~hOff & 1) == 1)
+                    LeftChannel[hOff / 2] = AudioByteStream[i / 2]; 
                 else
-                { RightChannel[r] = AudioByteStream[i]; r++; }
+                    RightChannel[hOff / 2] = AudioByteStream[i / 2]; 
             }
             if(IsSigned)
             {
