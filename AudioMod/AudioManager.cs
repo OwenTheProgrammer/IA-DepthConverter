@@ -129,8 +129,8 @@ namespace AudioMod
             byte[] RightChannel = new byte[Samples / Channels];
             for (int i = headerLength, l = 0, r = 0; i < AudioByteStream.Length; i++)
             {
-                if (i % 2 == 0)
-                if (~i & 1) // i % 2 == 0
+                //if (i % 2 == 0)
+                if ((~i & 1) == 1) // i % 2 == 0
                 { LeftChannel[l] = AudioByteStream[i]; l++; }
                 else
                 { RightChannel[r] = AudioByteStream[i]; r++; }
