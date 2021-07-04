@@ -1,6 +1,8 @@
 # CI-Depth and AudioMod
 A Color Image Depth Converter and an Audio bit rate converter
 
+[![CodeFactor](https://www.codefactor.io/repository/github/owentheprogrammer/ia-depthconverter/badge)](https://www.codefactor.io/repository/github/owentheprogrammer/ia-depthconverter)
+
 # Description
 This is a two part project, AudioMod is for converting audio bitrate and CIDepth.java is for converting image color palettes.
 ---
