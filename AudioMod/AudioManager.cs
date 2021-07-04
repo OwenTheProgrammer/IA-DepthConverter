@@ -4,15 +4,12 @@ using System.Text;
 
 namespace AudioMod
 {
-    public class AudioManager
-    {
+    public class AudioManager {
         static Func<string, byte[]> getBytes = x => Encoding.ASCII.GetBytes(x);
-        public struct AudioSample
-        {
+        public struct AudioSample {
             public byte[] ChannelL;
             public byte[] ChannelR;
-            public AudioSample(byte[] L, byte[] R)
-            {
+            public AudioSample(byte[] L, byte[] R) {
                 ChannelL = L; 
                 ChannelR = R; 
             }
@@ -33,8 +30,7 @@ namespace AudioMod
         public int sampleRate;
         public int Samples;
 
-        public AudioManager(int _samples, int _SampleRate, short _Channels, short SampleAlloc, int headerLen, Assertions Console)
-        {
+        public AudioManager(int _samples, int _SampleRate, short _Channels, short SampleAlloc, int headerLen, Assertions Console) {
             Cnsl = Console;
             bitsPerSample = SampleAlloc;
             Channels = _Channels;
@@ -46,8 +42,7 @@ namespace AudioMod
             chunkSize = 4 + (8 + subChunkSize) + (8 + quadChunkSize);
             headerLength = headerLen;
         }
-        public void GenerateAudioFile(String FileName, AudioSample Sample, bool IsSigned, ref bool ExStat)
-        {
+        public void GenerateAudioFile(String FileName, AudioSample Sample, bool IsSigned, ref bool ExStat) {
             //Error Checking
             if (Sample.ChannelL == null || Sample.ChannelR == null)
             { Cnsl.AudioManager_AudioSampleNull(); ExStat = false; return; }
@@ -78,15 +73,13 @@ namespace AudioMod
 
             byte[] rbs = { 0, 0, 0, 0 };
             wr.Write(rbs);
-            if(IsSigned)
-            {
+            if(IsSigned) {
                 Cnsl.AudioManager_ConvertedSignature(false);
                 Sample.ChannelL = UnsignedToSigned(Sample.ChannelL, bitsPerSample);
                 Sample.ChannelR = UnsignedToSigned(Sample.ChannelR, bitsPerSample);
             }
 
-            for (int i = 0; i < Samples / Channels; i++)
-            {
+            for (int i = 0; i < Samples / Channels; i++) {
                 wr.Write(Sample.ChannelL[i]);
                 wr.Write(Sample.ChannelR[i]);
             }
@@ -96,8 +89,7 @@ namespace AudioMod
             ExStat = true;
         }
 
-        public static byte[] SignedToUnsigned(byte[] x, int bps)
-        {
+        public static byte[] SignedToUnsigned(byte[] x, int bps) {
             byte[] output = new byte[x.Length];
             byte cb = (byte)(1 << bps - 1);
             for(int i = 0; i < output.Length; i++)
@@ -105,8 +97,7 @@ namespace AudioMod
             return output;
         }
 
-        public static byte[] UnsignedToSigned(byte[] x, int bps)
-        {
+        public static byte[] UnsignedToSigned(byte[] x, int bps) {
             byte[] output = new byte[x.Length];
             byte cb = (byte)(1 << bps - 1);
             for (int i = 0; i < output.Length; i++)
@@ -114,29 +105,25 @@ namespace AudioMod
             return output;
         }
 
-        public AudioSample LoadAudio(String FileName, bool IsSigned, ref bool ExStatus)
-        {
+        public AudioSample LoadAudio(String FileName, bool IsSigned, ref bool ExStatus) {
             if (!File.Exists(FileName))
             { Cnsl.AudioManager_FileNotFound(FileName); ExStatus = false; return new AudioSample(null, null); }
             byte[] AudioByteStream = File.ReadAllBytes(FileName);
-            if ((AudioByteStream.Length - headerLength) != Samples)
-            {
+            if ((AudioByteStream.Length - headerLength) != Samples) {
                 Cnsl.AudioManager_LoadSplitError(Samples,AudioByteStream,sampleRate,bitsPerSample,Channels,headerLength);
                 ExStatus = false;
                 return new AudioSample(null, null);
             }
             byte[] LeftChannel = new byte[Samples / Channels];
             byte[] RightChannel = new byte[Samples / Channels];
-            for (int i = headerLength, l = 0, r = 0; i < AudioByteStream.Length; i++)
-            {
+            for (int i = headerLength, l = 0, r = 0; i < AudioByteStream.Length; i++) {
                 //if (i % 2 == 0)
                 if ((~i & 1) == 1) // i % 2 == 0
                 { LeftChannel[l] = AudioByteStream[i]; l++; }
                 else
                 { RightChannel[r] = AudioByteStream[i]; r++; }
             }
-            if(IsSigned)
-            {
+            if(IsSigned) {
                 Cnsl.AudioManager_ConvertedSignature(true);
                 LeftChannel = SignedToUnsigned(LeftChannel, bitsPerSample);
                 RightChannel = SignedToUnsigned(RightChannel, bitsPerSample);
