@@ -91,7 +91,7 @@ namespace AudioMod
 
         public static byte[] SignedToUnsigned(byte[] x, int bps) {
             byte[] output = new byte[x.Length];
-            byte cb = (byte)(1 << bps - 1);
+            byte cb = (byte)((1 << bps) - 1);
             for(int i = 0; i < output.Length; i++)
                 output[i] = (byte)(~x[i] & ~cb);
             return output;
@@ -99,7 +99,7 @@ namespace AudioMod
 
         public static byte[] UnsignedToSigned(byte[] x, int bps) {
             byte[] output = new byte[x.Length];
-            byte cb = (byte)(1 << bps - 1);
+            byte cb = (byte)((1 << bps) - 1);
             for (int i = 0; i < output.Length; i++)
                 output[i] = (byte)(x[i] ^ cb);
             return output;
