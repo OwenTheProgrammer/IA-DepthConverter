@@ -29,7 +29,8 @@ namespace AudioMod
         public short Channels;
         public int sampleRate;
         public int Samples;
-
+        
+        //ISO standard .WAV format header generation
         public AudioManager(int _samples, int _SampleRate, short _Channels, short SampleAlloc, int headerLen, Assertions Console) {
             Cnsl = Console;
             bitsPerSample = SampleAlloc;
@@ -42,15 +43,18 @@ namespace AudioMod
             chunkSize = 4 + (8 + subChunkSize) + (8 + quadChunkSize);
             headerLength = headerLen;
         }
-        public void GenerateAudioFile(String FileName, AudioSample Sample, bool IsSigned, ref bool ExStat) {
+        public void GenerateAudioFile(String FileName, AudioSample Sample, bool IsSigned) {
             //Error Checking
-            if (Sample.ChannelL == null || Sample.ChannelR == null)
-            { Cnsl.AudioManager_AudioSampleNull(); ExStat = false; return; }
-            if (Sample.ChannelL.Length != Sample.ChannelR.Length)
-            { Cnsl.AudioManager_LRByteError(Sample.ChannelL, Sample.ChannelR); ExStat = false; return; }
-            if (Sample.ChannelL.Length != Samples / Channels || Sample.ChannelR.Length != Samples / Channels)
-            { Cnsl.AudioManager_ByteSampleError(Samples, Sample.ChannelL, Sample.ChannelR); ExStat = false; return; }
+            #region Error checking
+            if(Sample.ChannelL == null || Sample.ChannelR == null)
+                throw new ArgumentException("The given Audio Sample is null", nameof(Sample));
+            if(Sample.ChannelL.Length != Sample.ChannelR.Length)
+                throw new ArgumentException($"{Sample.ChannelL} has different length than {Sample.ChannelR}");
+            if(Sample.ChannelL.Length != Samples / Channels || Sample.ChannelR.Length != Samples / Channels) {
+                throw new ArgumentException($"Channel array differed sample count\n{Samples}, {Sample.ChannelL.Length}, {Sample.ChannelR.Length}");
+            #endregion
 
+            // Write/Overwrite file
             File.Delete(FileName);
             FileStream f = new FileStream(FileName, FileMode.Create);
             BinaryWriter wr = new BinaryWriter(f);
@@ -71,22 +75,24 @@ namespace AudioMod
             wr.Write(getBytes("data"));
             wr.Write(quadChunkSize);
 
-            byte[] rbs = { 0, 0, 0, 0 };
+            //write bytes/sample point
+            byte[] rbs = new byte[4];
             wr.Write(rbs);
+            // Convert to complement signature if signed data is enabled
             if(IsSigned) {
                 Cnsl.AudioManager_ConvertedSignature(false);
                 Sample.ChannelL = UnsignedToSigned(Sample.ChannelL, bitsPerSample);
                 Sample.ChannelR = UnsignedToSigned(Sample.ChannelR, bitsPerSample);
             }
 
-            for (int i = 0; i < Samples / Channels; i++) {
+            //Write the channel data
+            for(int i = 0; i < Samples / Channels; i++) {
                 wr.Write(Sample.ChannelL[i]);
                 wr.Write(Sample.ChannelR[i]);
             }
             wr.Close();
             wr.Dispose();
             Cnsl.AudioManager_FileCreationSuccess(f.Name);
-            ExStat = true;
         }
 
         public static byte[] SignedToUnsigned(byte[] x, int bps) {
@@ -100,35 +106,33 @@ namespace AudioMod
         public static byte[] UnsignedToSigned(byte[] x, int bps) {
             byte[] output = new byte[x.Length];
             byte cb = (byte)((1 << bps) - 1);
-            for (int i = 0; i < output.Length; i++)
+            for(int i = 0; i < output.Length; i++)
                 output[i] = (byte)(x[i] ^ cb);
             return output;
         }
 
-        public AudioSample LoadAudio(String FileName, bool IsSigned, ref bool ExStatus) {
-            if (!File.Exists(FileName))
-            { Cnsl.AudioManager_FileNotFound(FileName); ExStatus = false; return new AudioSample(null, null); }
+        public AudioSample LoadAudio(String FileName, bool IsSigned) {
+            if(!File.Exists(FileName))
+                throw new ArgumentException($"'{FileName}' Not found.");
             byte[] AudioByteStream = File.ReadAllBytes(FileName);
-            if ((AudioByteStream.Length - headerLength) != Samples) {
+            if((AudioByteStream.Length - headerLength) != Samples) {
                 Cnsl.AudioManager_LoadSplitError(Samples,AudioByteStream,sampleRate,bitsPerSample,Channels,headerLength);
-                ExStatus = false;
-                return new AudioSample(null, null);
+                throw new ArgumentException($"Sample couldnt be loaded");
             }
+            //Store each channels data
             byte[] LeftChannel = new byte[Samples / Channels];
             byte[] RightChannel = new byte[Samples / Channels];
-            for (int i = headerLength, l = 0, r = 0; i < AudioByteStream.Length; i++) {
-                //if (i % 2 == 0)
-                if ((~i & 1) == 1) // i % 2 == 0
-                { LeftChannel[l] = AudioByteStream[i]; l++; }
-                else
-                { RightChannel[r] = AudioByteStream[i]; r++; }
+            for(int i = headerLength, l = 0, r = 0; i < AudioByteStream.Length; i++) {
+                // i % 2 == 0
+                if((~i & 1) == 1) { LeftChannel[l] = AudioByteStream[i]; l++; }
+                else { RightChannel[r] = AudioByteStream[i]; r++; }
             }
+            //Add signature to output if enabled
             if(IsSigned) {
                 Cnsl.AudioManager_ConvertedSignature(true);
                 LeftChannel = SignedToUnsigned(LeftChannel, bitsPerSample);
                 RightChannel = SignedToUnsigned(RightChannel, bitsPerSample);
             }
-            ExStatus = true;
             return new AudioSample(LeftChannel, RightChannel);
         }
     }
